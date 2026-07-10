@@ -9,9 +9,22 @@ ACTIVE="$(json_field "$PAYLOAD" "d.get('stop_hook_active')")"
 # 既にこの hook 起因でループしている場合は素通しする（無限ループ防止）
 [[ "$ACTIVE" == "True" || "$ACTIVE" == "true" ]] && exit 0
 
-BRANCH="$(git -C "$PROJECT_DIR" rev-parse --abbrev-ref HEAD 2>/dev/null || echo '')"
+BRANCH="$(git -C "$PROJECT_DIR" symbolic-ref -q --short HEAD 2>/dev/null || git -C "$PROJECT_DIR" rev-parse --abbrev-ref HEAD 2>/dev/null || echo '')"
 # feature ブランチ以外（＝上流の作業）ではゲートしない
 [[ "$BRANCH" == feature/slice-* ]] || exit 0
+
+# main との分岐点（main が未生成なら empty tree）からの差分で
+# backend/frontend の実装ファイルが変わっていない（＝git設定やdocsのみ等）なら
+# 受け入れテスト対象が存在しないためゲートしない。
+EMPTY_TREE="4b825dc642cb6eb9a060e54bf8d69288fbee4904"
+MERGE_BASE="$(git -C "$PROJECT_DIR" merge-base main HEAD 2>/dev/null || echo "$EMPTY_TREE")"
+CHANGED_FILES="$( {
+  git -C "$PROJECT_DIR" diff --name-only "$MERGE_BASE" HEAD 2>/dev/null
+  git -C "$PROJECT_DIR" diff --name-only HEAD 2>/dev/null
+  git -C "$PROJECT_DIR" diff --name-only --cached 2>/dev/null
+} | sort -u)"
+IMPL_CHANGED="$(printf '%s\n' "$CHANGED_FILES" | grep -E '^(backend|frontend)/' | grep -vE '(README\.md|test-harness\.runtime\.json|\.gitkeep)$' || true)"
+[[ -z "$IMPL_CHANGED" ]] && exit 0
 
 LAST_RUN="${PROJECT_DIR}/test-results/.last-run.json"
 

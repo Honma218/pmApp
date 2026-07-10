@@ -13,7 +13,9 @@ deny() { block "PreToolUse:Bash" "$1"; }
 
 # --- main を進める操作: 統合役の専権（CLAUDE.md §1-1） ---
 # 現在ブランチで判定する。git 不在・detached 等は unknown ＝ fail-closed（ブロック側に倒す）。
-BRANCH="$(git -C "$PROJECT_DIR" rev-parse --abbrev-ref HEAD 2>/dev/null || echo unknown)"
+# symbolic-ref は unborn HEAD（commit 0件の新規ブランチ）でもブランチ名を返せる。
+# rev-parse --abbrev-ref HEAD は unborn HEAD で失敗するため、フォールバックとしてのみ使う。
+BRANCH="$(git -C "$PROJECT_DIR" symbolic-ref -q --short HEAD 2>/dev/null || git -C "$PROJECT_DIR" rev-parse --abbrev-ref HEAD 2>/dev/null || echo unknown)"
 
 if [[ "$CMD" =~ (^|[[:space:];&|])git[[:space:]]+commit ]]; then
   case "$BRANCH" in
