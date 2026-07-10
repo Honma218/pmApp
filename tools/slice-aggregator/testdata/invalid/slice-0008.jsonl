@@ -1,0 +1,5 @@
+{"event_id":"gate-8-nogo-nokind","type":"gate","slice_id":8,"at":"2026-07-20T10:00:00Z","verdict":"NO-GO","by":"pm"}
+{"event_id":"gate-8-go-withkind","type":"gate","slice_id":8,"at":"2026-07-20T11:00:00Z","verdict":"GO","kind":"rework","by":"pm"}
+{"event_id":"gate-8-go-withkind","type":"abandoned","slice_id":8,"at":"2026-07-20T12:00:00Z","reason":"cancelled"}
+{"event_id":"mismatch-9","type":"completed","slice_id":9,"at":"2026-07-19T09:00:00Z","pr":160}
+{"event_id":"extra-field","type":"completed","slice_id":8,"at":"2026-07-21T09:00:00Z","pr":161,"bogus":true}

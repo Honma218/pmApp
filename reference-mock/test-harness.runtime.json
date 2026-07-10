@@ -1,0 +1,11 @@
+{
+  "$schema": "../tools/teamdev-test-runner-mcp/schema/runtime.schema.json",
+  "bootCommand": "uv run uvicorn app.main:app --port 8000",
+  "cwd": ".",
+  "env": { "APP_ENV": "development" },
+  "entryUrl": "http://localhost:8000",
+  "port": 8000,
+  "bootTimeoutMs": 60000,
+  "readyCheck": { "type": "http_200", "path": "/health" },
+  "shutdownGracefulMs": 5000
+}

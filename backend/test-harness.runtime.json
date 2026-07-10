@@ -1,0 +1,11 @@
+{
+  "$schema": "../tools/teamdev-test-runner-mcp/schema/runtime.schema.json",
+  "bootCommand": "npm run start:dev",
+  "cwd": ".",
+  "env": { "NODE_ENV": "development", "PORT": "3000" },
+  "entryUrl": "http://localhost:3000",
+  "port": 3000,
+  "bootTimeoutMs": 60000,
+  "readyCheck": { "type": "http_200", "path": "/health" },
+  "shutdownGracefulMs": 5000
+}

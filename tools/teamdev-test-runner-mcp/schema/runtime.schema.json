@@ -1,0 +1,50 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "test-harness.runtime.json",
+  "description": "runner がアプリを起動するための宣言。1 app_dir = 1 プロセス。採点はテストFWが行う。",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["bootCommand", "readyCheck"],
+  "properties": {
+    "$schema": { "type": "string" },
+    "bootCommand": { "type": "string", "minLength": 1 },
+    "cwd": { "type": "string", "default": "." },
+    "env": { "type": "object", "additionalProperties": { "type": "string" } },
+    "entryUrl": { "type": "string", "format": "uri" },
+    "port": { "type": "integer", "minimum": 1, "maximum": 65535 },
+    "bootTimeoutMs": { "type": "integer", "minimum": 1000, "default": 30000 },
+    "shutdownGracefulMs": { "type": "integer", "minimum": 0, "default": 5000 },
+    "readyCheck": {
+      "oneOf": [
+        {
+          "type": "object", "additionalProperties": false,
+          "required": ["type", "path"],
+          "properties": { "type": { "const": "http_200" }, "path": { "type": "string" } }
+        },
+        {
+          "type": "object", "additionalProperties": false,
+          "required": ["type", "path", "expectStatus"],
+          "properties": {
+            "type": { "const": "http_status" },
+            "path": { "type": "string" },
+            "expectStatus": { "type": "integer" }
+          }
+        },
+        {
+          "type": "object", "additionalProperties": false,
+          "required": ["type"],
+          "properties": { "type": { "const": "tcp_listen" }, "port": { "type": "integer" } }
+        },
+        {
+          "type": "object", "additionalProperties": false,
+          "required": ["type", "path", "contains"],
+          "properties": {
+            "type": { "const": "text_in_response" },
+            "path": { "type": "string" },
+            "contains": { "type": "string" }
+          }
+        }
+      ]
+    }
+  }
+}

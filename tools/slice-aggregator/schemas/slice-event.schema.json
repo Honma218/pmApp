@@ -1,0 +1,106 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://m-team/slice-aggregator/schemas/slice-event.schema.json",
+  "title": "Slice progress event (one JSON object per NDJSON line)",
+  "description": "スライス進捗集計アプリの1イベント。docs/metrics/events/slice-NNNN.jsonl の各行を検証する。status=proposed（PM承認待ち #6/#7）。確定ログ §7 準拠。",
+  "type": "object",
+  "required": ["event_id", "type", "slice_id", "at"],
+  "additionalProperties": false,
+  "properties": {
+    "event_id": {
+      "type": "string",
+      "minLength": 1,
+      "description": "決定論的・冪等な ID。コメント由来は 'gh-comment-<id>'。同一 webhook 再実行で二重化しない。"
+    },
+    "type": {
+      "type": "string",
+      "enum": ["issued", "submitted", "rescued", "rescue_revoked", "rejected", "gate", "abandoned", "completed"]
+    },
+    "slice_id": {
+      "type": "integer",
+      "minimum": 1,
+      "description": "主キー。不変・再利用禁止・単調増加。パスは主キーにしない。"
+    },
+    "at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "イベントの発生時刻。コメント由来は created_at（実行時刻ではない）。"
+    },
+    "actor": { "type": "string", "minLength": 1 },
+    "by": { "type": "string", "minLength": 1 },
+    "spec_pr": { "type": "integer", "minimum": 1 },
+    "pr": { "type": "integer", "minimum": 1 },
+    "issue": { "type": "integer", "minimum": 1 },
+    "diff_add": { "type": "integer", "minimum": 0 },
+    "diff_del": { "type": "integer", "minimum": 0 },
+    "usage_usd": {
+      "type": ["number", "null"],
+      "minimum": 0,
+      "description": "枠消費。取得元未定のため null 許容（補助指標・北極星に影響しない）。"
+    },
+    "note": { "type": "string" },
+    "source": { "type": "string", "format": "uri" },
+    "reason": { "type": "string", "minLength": 1 },
+    "verdict": { "type": "string", "enum": ["GO", "NO-GO"] },
+    "kind": { "type": "string", "enum": ["rework", "redecompose"] }
+  },
+  "allOf": [
+    {
+      "$comment": "issued: spec/* merged webhook が発火。slice_id ↔ issue 対応をここで確定（確定ログ #H）。",
+      "if": { "properties": { "type": { "const": "issued" } } },
+      "then": { "required": ["actor", "spec_pr"] }
+    },
+    {
+      "$comment": "submitted: /submit の PR。diff と枠消費を載せる。",
+      "if": { "properties": { "type": { "const": "submitted" } } },
+      "then": { "required": ["pr", "diff_add", "diff_del"] }
+    },
+    {
+      "$comment": "rescued: 唯一の人手イベント。bot が生成。note=日本語1文, source=コメントURL。",
+      "if": { "properties": { "type": { "const": "rescued" } } },
+      "then": { "required": ["actor", "note", "source"] }
+    },
+    {
+      "$comment": "rescue_revoked: /unrescue の打ち消し。行は消さず追記で無効化。",
+      "if": { "properties": { "type": { "const": "rescue_revoked" } } },
+      "then": { "required": ["actor", "source"] }
+    },
+    {
+      "$comment": "rejected: 統合役NG。差し戻し率の分子（NO-GO:rework と合算）。",
+      "if": { "properties": { "type": { "const": "rejected" } } },
+      "then": { "required": ["by", "reason"] }
+    },
+    {
+      "$comment": "gate: 層境ゲート。NO-GO のときのみ kind 必須（ADR-0007 改訂・#6）。",
+      "if": { "properties": { "type": { "const": "gate" } } },
+      "then": {
+        "required": ["by", "verdict"],
+        "allOf": [
+          {
+            "if": { "properties": { "verdict": { "const": "NO-GO" } } },
+            "then": { "required": ["kind"] }
+          },
+          {
+            "if": { "properties": { "verdict": { "const": "GO" } } },
+            "then": { "not": { "required": ["kind"] } }
+          }
+        ]
+      }
+    },
+    {
+      "$comment": "abandoned: 破棄。reason は split|descoped|failed。未ラベルは failed に倒す（測る側に不利）。",
+      "if": { "properties": { "type": { "const": "abandoned" } } },
+      "then": {
+        "required": ["reason"],
+        "properties": {
+          "reason": { "type": "string", "enum": ["split", "descoped", "failed"] }
+        }
+      }
+    },
+    {
+      "$comment": "completed: GO→merged。",
+      "if": { "properties": { "type": { "const": "completed" } } },
+      "then": { "required": ["pr"] }
+    }
+  ]
+}

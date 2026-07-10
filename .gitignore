@@ -1,0 +1,11 @@
+logs/
+test-results/
+.env
+.env.*
+*.sql
+fixtures/real*
+node_modules/
+__pycache__/
+*.pyc
+.venv/
+.pytest_cache/

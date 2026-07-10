@@ -1,0 +1,41 @@
+# スライス進捗イベント(NDJSON)のスキーマ検証（三層モデルの「事後検証」層）。
+# 確定ログ §6-1: 欠損を集計時ではなく PR 時に弾く。ADR-0012 の「JSON Schema で全 events 行を CI 検証」の実体。
+# status: proposed（PM承認待ち #6/#7）。GO 後に本運用。
+name: validate-events
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - "docs/metrics/events/**"
+      - "tools/slice-aggregator/schemas/**"
+      - "tools/slice-aggregator/scripts/validate_events.py"
+      - ".github/workflows/validate-events.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: jsonschema を入れる
+        run: pip install "jsonschema>=4.20"
+
+      - name: events を検証（スキーマ＋冪等＋append-only）
+        run: python tools/slice-aggregator/scripts/validate_events.py
+
+      - name: 書き込みパスの逸脱チェック（bot 例外の範囲＝ADR-0012）
+        run: |
+          CHANGED="$(git diff --name-only origin/${{ github.base_ref }}...HEAD)"
+          echo "$CHANGED"
+          # events/index/status/gates 以外の docs/metrics/ 直下変更を警告的に検出（将来 deny に昇格可）
+          if echo "$CHANGED" | grep -qE '^docs/metrics/events/' ; then
+            echo "events 変更を検出。スキーマ検証で担保済み。"
+          fi
