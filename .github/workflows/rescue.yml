@@ -1,0 +1,140 @@
+# /rescue・/unrescue コメントから rescued/rescue_revoked イベントを記録する（唯一の人手イベント）。
+# 実装ロードマップ P3／確定ログ #B の実体。ADR-0012（bot直コミット許可）の適用範囲内
+# （書き込み先は docs/metrics/events/** のみ・append-only・schema検証を経てからコミット）。
+# status: accepted（P0 #7 GO・2026-07-11 PM承認済み）。
+#
+# セキュリティ（P3完了基準・必須）:
+#   - コメント本文は env 経由で渡す（${{ }} を run: スクリプト文字列に直挿ししない。script injection対策）
+#   - 投稿者を UPSTREAM_MEMBERS（カンマ区切り）にallowlist。リポジトリ変数が未設定なら
+#     現運用者 "Honma218" にフォールバック（チーム拡張時は Settings > Variables で上書きする）
+#   - pull_request_target は使わない（issue_comment は base repo コンテキストで安全）
+#   - 書き込みは docs/metrics/events/** に限定
+name: rescue
+
+on:
+  issue_comment:
+    types: [created]
+
+permissions:
+  contents: write
+  issues: write
+  pull-requests: write
+
+concurrency:
+  group: metrics-write
+  cancel-in-progress: false
+
+jobs:
+  rescue:
+    if: startsWith(github.event.comment.body, '/rescue') || startsWith(github.event.comment.body, '/unrescue')
+    runs-on: ubuntu-latest
+    env:
+      GH_TOKEN: ${{ github.token }}
+      REPO: ${{ github.repository }}
+      COMMENT_BODY: ${{ github.event.comment.body }}
+      COMMENT_ID: ${{ github.event.comment.id }}
+      COMMENT_AUTHOR: ${{ github.event.comment.user.login }}
+      COMMENT_CREATED_AT: ${{ github.event.comment.created_at }}
+      COMMENT_HTML_URL: ${{ github.event.comment.html_url }}
+      ISSUE_NUMBER: ${{ github.event.issue.number }}
+      UPSTREAM_MEMBERS_VAR: ${{ vars.UPSTREAM_MEMBERS }}
+    steps:
+      - name: 受理リアクション（👀）
+        run: gh api "repos/${REPO}/issues/comments/${COMMENT_ID}/reactions" -f content=eyes --silent
+
+      - name: 投稿者を allowlist で確認
+        id: authz
+        run: |
+          ALLOWLIST="${UPSTREAM_MEMBERS_VAR:-Honma218}"
+          IFS=',' read -ra ALLOWED <<< "$ALLOWLIST"
+          AUTHORIZED=false
+          for u in "${ALLOWED[@]}"; do
+            u_trimmed="$(echo "$u" | xargs)"
+            if [ "$u_trimmed" = "$COMMENT_AUTHOR" ]; then
+              AUTHORIZED=true
+              break
+            fi
+          done
+          echo "authorized=$AUTHORIZED" >> "$GITHUB_OUTPUT"
+
+      - name: 未許可なら却下コメントを返して終了
+        if: steps.authz.outputs.authorized != 'true'
+        run: |
+          gh issue comment "$ISSUE_NUMBER" --repo "$REPO" \
+            --body "❌ /rescue・/unrescue は上流メンバー（UPSTREAM_MEMBERS）のみ実行できます。"
+          exit 1
+
+      - uses: actions/checkout@v4
+        if: steps.authz.outputs.authorized == 'true'
+        with:
+          ref: main
+          fetch-depth: 0
+
+      - uses: actions/setup-python@v5
+        if: steps.authz.outputs.authorized == 'true'
+        with:
+          python-version: "3.12"
+
+      - name: 依存を入れる
+        if: steps.authz.outputs.authorized == 'true'
+        run: pip install "jsonschema>=4.20"
+
+      - name: slice_id 解決の補助情報を取得（PRヘッドブランチ or issue本文）
+        id: context
+        if: steps.authz.outputs.authorized == 'true'
+        run: |
+          if gh pr view "$ISSUE_NUMBER" --repo "$REPO" --json headRefName --jq .headRefName > /tmp/pr_head_ref.txt 2>/dev/null; then
+            echo "PR コメント。head ref: $(cat /tmp/pr_head_ref.txt)"
+          else
+            gh issue view "$ISSUE_NUMBER" --repo "$REPO" --json body --jq .body > /tmp/issue_body.txt || true
+            echo "issue コメント。"
+          fi
+
+      - name: rescued/rescue_revoked イベントを生成
+        id: handle
+        if: steps.authz.outputs.authorized == 'true'
+        run: |
+          if [ -f /tmp/pr_head_ref.txt ]; then
+            export PR_HEAD_REF="$(cat /tmp/pr_head_ref.txt)"
+          fi
+          if [ -f /tmp/issue_body.txt ]; then
+            export ISSUE_BODY="$(cat /tmp/issue_body.txt)"
+          fi
+          set +e
+          OUT="$(python3 tools/slice-aggregator/scripts/handle_rescue_comment.py 2>&1)"
+          RC=$?
+          set -e
+          {
+            echo "message<<RESCUE_EOF"
+            echo "$OUT"
+            echo "RESCUE_EOF"
+            echo "rc=$RC"
+          } >> "$GITHUB_OUTPUT"
+
+      - name: 生成したイベントを検証（直コミット前の事後検証層）
+        if: steps.authz.outputs.authorized == 'true' && steps.handle.outputs.rc == '0'
+        run: python3 tools/slice-aggregator/scripts/validate_events.py
+
+      - name: 記録できていればコミット・push
+        if: steps.authz.outputs.authorized == 'true' && steps.handle.outputs.rc == '0'
+        run: |
+          if ! git diff --quiet -- docs/metrics/events/; then
+            git config user.name "github-actions[bot]"
+            git config user.email "github-actions[bot]@users.noreply.github.com"
+            git add docs/metrics/events/
+            git commit -m "chore(events): rescue記録 (comment #${COMMENT_ID})"
+            git push origin HEAD:main
+          fi
+
+      - name: 結果をコメントで返信
+        if: steps.authz.outputs.authorized == 'true'
+        env:
+          RESULT_MESSAGE: ${{ steps.handle.outputs.message }}
+          RESULT_RC: ${{ steps.handle.outputs.rc }}
+        run: |
+          if [ "$RESULT_RC" = "0" ]; then
+            PREFIX="✅"
+          else
+            PREFIX="❌"
+          fi
+          gh issue comment "$ISSUE_NUMBER" --repo "$REPO" --body "$PREFIX $RESULT_MESSAGE"
