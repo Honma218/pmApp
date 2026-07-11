@@ -46,12 +46,14 @@ jobs:
 
       - name: 生成した events 由来の派生物に変更があればコミット・push
         run: |
-          if git diff --quiet -- docs/metrics/index/ docs/status/; then
+          # git diff は untracked（新規）ファイルを検知しないため、先に git add してから
+          # 差分の有無を判定する（2026-07-11 発見・修正）。
+          git add docs/metrics/index/ docs/status/
+          if git diff --cached --quiet; then
             echo "変更なし。スキップ。"
             exit 0
           fi
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add docs/metrics/index/ docs/status/
           git commit -m "chore(status): 日次集約 (${{ steps.asof.outputs.value }})"
           git push origin HEAD:main
