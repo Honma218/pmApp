@@ -13,6 +13,19 @@
 - 作成は `/brief <slice>`（リーダー＝枠・禁止事項／AIアーキ＝技術の形／PM＝受入基準）。
 - 各指示書は必須6項目（ゴール／検証方法／ファイル範囲／貼り付け用の枠／完了の定義／禁止事項）。
 - ファイル名: `slice-NN-<slug>.md`（例: `slice-01-events-schema.md`）。
+- **frontmatter に `slice_id`（必須）を持つ。** スライス進捗集計アプリの主キー（確定ログ #A・
+  不変・再利用禁止・単調増加）。`issue`（GitHub issue番号）は任意。例：
+
+  ```yaml
+  ---
+  slice_id: 1
+  issue: 42   # 任意
+  ---
+  ```
+
+  この PR が `main` にマージされると、`emit-issued-event` workflow が frontmatter を読み取り
+  `docs/metrics/events/slice-0001.jsonl` に `issued` イベントを追記する（P1・`tools/slice-aggregator/`）。
+  **`slice_id` を持たない指示書は起票イベントが記録されない**（=集計対象外になる）。
 
 ## スライス一覧（依存順）
 

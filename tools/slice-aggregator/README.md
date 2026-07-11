@@ -5,7 +5,7 @@ Harness-Keeper の道具。**読むだけ。** 唯一の書き込みは `/rescue
 
 - 設計：`../../2026-07-11_slice-progress-aggregator_確定ログ.md`
 - 着手計画：`../../2026-07-11_slice-progress-aggregator_実装ロードマップ.md`
-- 承認ゲート：`../../2026-07-11_P0-承認パッケージ.md`（**P0 は PM 承認待ち #6/#7**）
+- 承認ゲート：`../../2026-07-11_P0-承認パッケージ.md`（**P0 は8件すべてGO・2026-07-11 PM承認済み**）
 
 ## 現在の実装状況（P1：基盤スキーマ）
 
@@ -14,8 +14,9 @@ Harness-Keeper の道具。**読むだけ。** 唯一の書き込みは `/rescue
 | イベントスキーマ | `schemas/slice-event.schema.json` | 1イベント=1行の NDJSON を検証（draft 2020-12） |
 | バリデータ | `scripts/validate_events.py` | スキーマ＋event_id冪等＋append-only（時刻/slice_id整合） |
 | CI | `../../.github/workflows/validate-events.yml` | PR 時に events を検証（事後検証層） |
-| ゲートログ | `../../docs/metrics/gates.md` | NO-GO種別つき（ADR-0007 改訂の実体・#6） |
+| ゲートログ | `../../docs/metrics/gates.md` | NO-GO種別つき（ADR-0007 改訂の実体・本運用中） |
 | テストデータ | `testdata/valid`・`testdata/invalid` | 正常=緑・異常=赤の回帰用 |
+| `issued`イベント発火 | `scripts/emit_issued_event.py` ＋ `../../.github/workflows/emit-issued-event.yml` | `docs/slices/slice-NN.md` の merge を検知し起票イベントを記録 |
 
 未実装（次フェーズ）：P2 `fold` 純関数＋再現テスト／P3 `/rescue` Actions／P4 `/pickup` 重複警告／P5 三層集約。
 
