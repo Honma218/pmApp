@@ -21,9 +21,14 @@ Harness-Keeper の道具。**読むだけ。** 唯一の書き込みは `/rescue
 | **単体テスト** | `tests/test_fold.py`・`tests/test_handle_rescue_comment.py` | 状態機械・決定性・KPI算出・`/rescue`解決ロジックを網羅 |
 | CI（test） | `../../.github/workflows/test-slice-aggregator.yml` | PR 時に pytest を実行 |
 | **`/rescue`・`/unrescue`** | `scripts/handle_rescue_comment.py` ＋ `../../.github/workflows/rescue.yml` | 唯一の人手イベント。issue/PRコメントから救援を記録（確定ログ #B・P3） |
+| **`/pickup` 重複警告** | `../../.claude/skills/pickup/SKILL.md` | open ブランチとのファイル範囲重複を advisory 警告（確定ログ #K-(A)・P4） |
+| **① 速報** | `scripts/render_pr_status.py` ＋ `../../.github/workflows/pr-status-comment.yml` | スライスPRに現在地1行を投稿・更新（自分のPRにのみ・P5） |
+| **② 日次集約** | `scripts/generate_daily_snapshot.py` ＋ `../../.github/workflows/daily-status-cron.yml` | `docs/metrics/index/slice-map.json`・`docs/status/daily/*.json` を生成（書き手はこの1本だけ・確定ログ #J） |
+| **③ 週次レポート** | `scripts/generate_weekly_report.py`（同上 workflow） | `docs/status/weekly/YYYY-Www.md`。直近5スライス移動平均・Flywheel観察項目 |
 
-未実装（次フェーズ）：P4 `/pickup` 重複警告／P5 三層集約
-（速報・日次cron・週次mdと、日次での過去7日再計算による非決定性検出 cron は P5 が所有）。
+未実装（次フェーズ）：**P6 slice-01 ドッグフーディングのみ**。
+日次での過去7日再計算による非決定性検出（P2の運用面）は、実データが増えてから
+`daily-status-cron.yml` に追加する予定（現状は日次1回の単純再計算のみ）。
 
 ## `/rescue`（救援の記録）の使い方
 
@@ -42,6 +47,19 @@ Harness-Keeper の道具。**読むだけ。** 唯一の書き込みは `/rescue
   `gh variable set UPSTREAM_MEMBERS --body "user1,user2,user3"` で上書きする。
 - 応答は 👀（受理リアクション）→ コメント返信で ✅（記録）／❌（失敗理由）。
 
+## 三層集約（P5）の出力
+
+- **① 速報**：`feature/slice-<N>-*` ブランチのPRを開く/更新するたびに、そのPRへ現在地1行を
+  投稿・更新する（他スライスの状態は見せない）。
+- **② 日次**：`daily-status-cron.yml`（毎日06:00 JST・`workflow_dispatch` でも起動可）が
+  全 events を再計算し、`docs/metrics/index/slice-map.json`（現在の一覧）と
+  `docs/status/daily/YYYY-MM-DD.json`（その日のKPIスナップショット）を生成する。
+- **③ 週次**：同じcronが `docs/status/weekly/YYYY-Www.md` を生成・更新する
+  （週の途中でも最新化される。ISO週が変わると新しいファイルになる）。
+- **書き手は日次cron1本だけ**（`/submit`・`/rescue` は集約に触れない＝突合ゼロ・確定ログ #J）。
+  全書き込みジョブは `concurrency: { group: metrics-write, cancel-in-progress: false }` で直列化。
+- **GitHub Pages は作らない**（v0はJSON/Markdown出力のみ。確定ログ #I）。
+
 **「スライス肥大率」の閾値は未確定。** `compute_kpis()` は diff行数・所要日数・split/redecompose件数の
 生信号のみ返す。「何行・何日から肥大か」は新たな KPI 定義の決定であり PM 承認が要る
 （旧 ADR-0008 golden 閾値と同じ「最初ゆるく→実データで較正」方針。P6 ドッグフーディングで数値が集まってから判断）。
@@ -56,6 +74,10 @@ python tools/slice-aggregator/scripts/validate_events.py
 
 # 状態とKPIを見る
 python tools/slice-aggregator/scripts/fold.py tools/slice-aggregator/testdata/valid/slice-0007.jsonl
+
+# 三層集約を手動生成（as_ofは任意のISO8601。実行するとdocs/metrics/index・docs/status配下に書き込む）
+python tools/slice-aggregator/scripts/generate_daily_snapshot.py --as-of "$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+python tools/slice-aggregator/scripts/generate_weekly_report.py --as-of "$(date -u +%Y-%m-%dT%H:%M:%SZ)"
 
 # 単体テスト
 python -m pytest tools/slice-aggregator/tests/ -v
