@@ -25,11 +25,11 @@ Harness-Keeper の道具。**読むだけ。** 唯一の書き込みは `/rescue
 | **① 速報** | `scripts/render_pr_status.py` ＋ `../../.github/workflows/pr-status-comment.yml` | スライスPRに現在地1行を投稿・更新（自分のPRにのみ・P5） |
 | **② 日次集約** | `scripts/generate_daily_snapshot.py` ＋ `../../.github/workflows/daily-status-cron.yml` | `docs/metrics/index/slice-map.json`・`docs/status/daily/*.json` を生成（書き手はこの1本だけ・確定ログ #J） |
 | **③ 週次レポート** | `scripts/generate_weekly_report.py`（同上 workflow） | `docs/status/weekly/YYYY-Www.md`。直近5スライス移動平均・Flywheel観察項目 |
-
 | **`submitted`・`completed` 自動記録** | `scripts/emit_slice_pr_event.py` ＋ `../../.github/workflows/emit-slice-pr-events.yml` | `feature/slice-<N>-*` PRのopen/mergeから機械的に記録（P6準備） |
-| **`/gate`・`/reject`** | `scripts/handle_gate_comment.py` ＋ `../../.github/workflows/gate.yml` | PM限定のコメントコマンド。層境ゲート判定・統合役NGを記録（P6準備） |
+| **`/gate`・`/reject`・`/abandon`** | `scripts/handle_gate_comment.py` ＋ `../../.github/workflows/gate.yml` | PM限定のコメントコマンド。層境ゲート判定・統合役NG・破棄を記録（P6準備・`/abandon`はslice-01・issue #18） |
 
-未実装（次フェーズ）：**P6 slice-01 ドッグフーディングのみ**。
+これで8イベント型（`issued`/`submitted`/`rescued`/`rescue_revoked`/`rejected`/`gate`/`abandoned`/`completed`）
+すべてに記録経路が揃った。未実装（次フェーズ）：**P6 slice-01 のドッグフーディング完走のみ**。
 日次での過去7日再計算による非決定性検出（P2の運用面）は、実データが増えてから
 `daily-status-cron.yml` に追加する予定（現状は日次1回の単純再計算のみ）。
 
@@ -50,20 +50,27 @@ Harness-Keeper の道具。**読むだけ。** 唯一の書き込みは `/rescue
   `gh variable set UPSTREAM_MEMBERS --body "user1,user2,user3"` で上書きする。
 - 応答は 👀（受理リアクション）→ コメント返信で ✅（記録）／❌（失敗理由）。
 
-## `/gate`・`/reject`（層境ゲート・統合役NGの記録。PM限定）
+## `/gate`・`/reject`・`/abandon`（層境ゲート・統合役NG・破棄の記録。PM限定）
 
 ```
 /gate GO --slice 7
 /gate NO-GO --kind rework --slice 7
 /gate NO-GO --kind redecompose --slice 7
 /reject --slice 7 範囲外のファイルが含まれている
+/abandon --reason split --slice 7
+/abandon --reason descoped --slice 7
+/abandon --reason failed --slice 7
 ```
 
 - 実行できるのは `GATE_KEEPERS`（リポジトリ変数。カンマ区切り。`/rescue` の `UPSTREAM_MEMBERS` とは別）
   に登録されたユーザーのみ。**未設定時は現運用者 `Honma218` にフォールバック**する
-  （CLAUDE.md §7「判定者はPM」を allowlist で強制。`/rescue` はリーダーも実行できるが `/gate`・`/reject` はPM限定）。
+  （CLAUDE.md §7「判定者はPM」を allowlist で強制。`/rescue` はリーダーも実行できるが `/gate`・`/reject`・
+  `/abandon` はPM限定）。
 - `NO-GO` は `--kind rework`（同一 slice_id 継続）か `--kind redecompose`（分解し直し）を**必須**で
   指定する。省略すると記録せず打ち直しを促す。
+- `/abandon` の `--reason` は `split`（分解し直し。通常 `/gate NO-GO --kind redecompose` とセット）／
+  `descoped`（要らないと判明）／`failed`（緑に至らず断念）の3値のみ許可。省略・不正値は記録せず
+  打ち直しを促す。
 - `docs/metrics/gates.md` は人間向けの任意ログとして残るが、**KPI計算が読むのは events。
   食い違えば events が正**。
 - slice_id 解決・応答UXは `/rescue` と同じ（`--slice` 明示 > PRブランチ > issue本文、👀→✅/❌）。

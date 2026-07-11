@@ -24,7 +24,7 @@ disable-model-invocation: true
 
 1. **復帰確認**（セッション冒頭の定型）
    - `git status` と `git log --oneline -3` の**生出力**を確認する。
-   - 未コミットの変更・既存の `feature/slice-<issue>` ブランチがあれば、それは前回の続き。
+   - 未コミットの変更・既存の `feature/slice-<slice_id>` ブランチがあれば、それは前回の続き。
      新規に切り直さず、続きから再開する。**このセッションが同一 slice_id の3回目以降の着手なら、
      上記の注意喚起に従いリーダーへ報告する。**
 
@@ -36,7 +36,7 @@ disable-model-invocation: true
      スライス進捗集計アプリの計測対象外になる旨を報告する。
 
 3. **ブランチ**
-   - `feature/slice-<issue>` が無ければ、`main` から切って checkout する（ブランチ作成のみ。push しない）。
+   - `feature/slice-<slice_id>` が無ければ、`main` から切って checkout する（ブランチ作成のみ。push しない）。
 
 4. **6項目の要約提示**
    指示書から以下を抜き出し、そのまま提示する。欠けている項目があれば**着手せずリーダーに差し戻す**。
@@ -66,7 +66,7 @@ disable-model-invocation: true
 
 ```
 ## slice-<issue>: <ゴール>
-ブランチ: feature/slice-<issue>（新規作成 / 既存を継続）
+ブランチ: feature/slice-<slice_id>（新規作成 / 既存を継続）
 受入基準: <n>個
 未充足の指示書項目: なし / <項目名>
 重複警告: なし / <ブランチ名>（重なるファイル: <一覧>）

@@ -1,10 +1,11 @@
 #!/usr/bin/env python3
 """
-handle_gate_comment.py — /gate・/reject コメントから gate/rejected イベントを生成する。
+handle_gate_comment.py — /gate・/reject・/abandon コメントから gate/rejected/abandoned
+イベントを生成する。
 
 `/rescue`（handle_rescue_comment.py）と同じ信頼モデル（コメントコマンド・env経由での
-本文受け渡し・allowlist・bot直コミット）を、層境ゲート（PMのGO/NO-GO）・統合役の再検証NG
-に拡張する。判定者が誰であるべきかは CLAUDE.md §7 に従い、呼び出し側ワークフローの
+本文受け渡し・allowlist・bot直コミット）を、層境ゲート（PMのGO/NO-GO）・統合役の再検証NG・
+破棄判定に拡張する。判定者が誰であるべきかは CLAUDE.md §7 に従い、呼び出し側ワークフローの
 allowlist（GATE_KEEPERS。PM限定）で強制する——このスクリプト自体は認可を判断しない。
 
 コマンド:
@@ -12,6 +13,10 @@ allowlist（GATE_KEEPERS。PM限定）で強制する——このスクリプト
   /gate NO-GO --kind rework      -> type=gate, verdict=NO-GO, kind=rework（差し戻し率の分子）
   /gate NO-GO --kind redecompose -> type=gate, verdict=NO-GO, kind=redecompose（肥大率側）
   /reject <理由>                  -> type=rejected, reason=<理由>（統合役NG。差し戻し率の分子）
+  /abandon --reason split|descoped|failed -> type=abandoned, reason=<reason>
+      split      … 分解し直し（親を破棄・子を新規起票。通常 /gate NO-GO --kind redecompose とセット）
+      descoped   … 要らないと判明（分母から除外・指示書進捗の計算対象外）
+      failed     … 緑に至らず断念（ハーネスの欠陥。AFK完走率の分母に算入・確定ログ #D）
 
 slice_id 解決の優先順位は /rescue と同じ（確定ログ #B 相当）：
   1. コメント内の --slice <N> 明示
@@ -41,6 +46,7 @@ EVENTS_DIR = REPO_ROOT / "docs" / "metrics" / "events"
 
 SLICE_ID_FLAG_RE = re.compile(r"--slice[= ]+(\d+)")
 KIND_FLAG_RE = re.compile(r"--kind[= ]+(rework|redecompose)")
+REASON_FLAG_RE = re.compile(r"--reason[= ]+(split|descoped|failed)")
 BRANCH_SLICE_RE = re.compile(r"feature/slice-0*(\d+)")
 ISSUE_BODY_SLICE_RE = re.compile(r"docs/slices/slice-0*(\d+)")
 ISSUE_BODY_FALLBACK_RE = re.compile(r"slice[-_]0*(\d+)")
@@ -94,6 +100,16 @@ def parse_command(body: str) -> dict | None:
             return {"type": "rejected", "error": "理由が空です。`/reject <理由>` の形式で書いてください。"}
         return {"type": "rejected", "reason": rest}
 
+    if first_line.startswith("/abandon"):
+        rest = first_line[len("/abandon"):]
+        reason_match = REASON_FLAG_RE.search(rest)
+        if not reason_match:
+            return {
+                "type": "abandoned",
+                "error": "`--reason split` か `--reason descoped` か `--reason failed` が必須",
+            }
+        return {"type": "abandoned", "reason": reason_match.group(1)}
+
     return None
 
 
@@ -120,7 +136,7 @@ def main() -> int:
     parsed = parse_command(body)
     if parsed is None:
         # 通常ここには来ない（呼び出し前提のワークフロー側 if で既にフィルタ済み）。防御的フォールバック。
-        print("対象コマンドではない（/gate, /reject のいずれでもない）")
+        print("対象コマンドではない（/gate, /reject, /abandon のいずれでもない）")
         return 1
     if "error" in parsed:
         print(parsed["error"])
@@ -174,8 +190,10 @@ def main() -> int:
             verb = f"層境ゲート判定を記録しました（{parsed['verdict']}・{parsed['kind']}）"
         else:
             verb = f"層境ゲート判定を記録しました（{parsed['verdict']}）"
-    else:
+    elif parsed["type"] == "rejected":
         verb = "差し戻し（統合役NG）を記録しました"
+    else:
+        verb = f"破棄を記録しました（{parsed['reason']}）"
     print(f"{verb}（slice_id={slice_id}）。")
     return 0
 
