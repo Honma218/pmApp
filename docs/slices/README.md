@@ -31,6 +31,6 @@
 
 | ID | ゴール（1行） | 依存 | issue | 状態 |
 |---|---|---|---|---|
-| 1 | `abandoned` イベントの自動記録（`/abandon` コメントコマンド） | P1〜P6準備完了 | （main マージ後に起票） | 指示書作成済み |
+| 1 | `abandoned` イベントの自動記録（`/abandon` コメントコマンド） | P1〜P6準備完了 | [#18](https://github.com/Honma218/pmApp/issues/18) | 実装中（`/pickup 1`） |
 
 > この一覧は issue 分解の成果物。フェーズ全体の依存順は `2026-07-11_slice-progress-aggregator_実装ロードマップ.md`（P0〜P6）を参照。

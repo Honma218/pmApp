@@ -1,5 +1,5 @@
 """
-test_handle_gate_comment.py — /gate・/reject コメント処理のテスト（P6準備）。
+test_handle_gate_comment.py — /gate・/reject・/abandon コメント処理のテスト（P6準備・slice-01）。
 """
 from __future__ import annotations
 
@@ -55,6 +55,30 @@ def test_parse_reject_empty_reason_errors():
     result = hgc.parse_command("/reject")
     assert result["type"] == "rejected"
     assert "理由" in result["error"]
+
+
+def test_parse_abandon_split():
+    assert hgc.parse_command("/abandon --reason split") == {"type": "abandoned", "reason": "split"}
+
+
+def test_parse_abandon_descoped():
+    assert hgc.parse_command("/abandon --reason descoped") == {"type": "abandoned", "reason": "descoped"}
+
+
+def test_parse_abandon_failed():
+    assert hgc.parse_command("/abandon --reason failed") == {"type": "abandoned", "reason": "failed"}
+
+
+def test_parse_abandon_without_reason_errors():
+    result = hgc.parse_command("/abandon")
+    assert result["type"] == "abandoned"
+    assert "reason" in result["error"]
+
+
+def test_parse_abandon_invalid_reason_errors():
+    result = hgc.parse_command("/abandon --reason cancelled")
+    assert result["type"] == "abandoned"
+    assert "error" in result
 
 
 def test_parse_non_command_returns_none():
@@ -181,3 +205,33 @@ def test_main_resolves_via_pr_head_ref(tmp_path, monkeypatch):
     rc = run_main("/reject ダメ", PR_HEAD_REF="feature/slice-0012-foo")
     assert rc == 0
     assert len(read_events(12, tmp_path)) == 1
+
+
+def test_main_records_abandoned_split(tmp_path, monkeypatch):
+    monkeypatch.setattr(hgc, "EVENTS_DIR", tmp_path)
+    rc = run_main("/abandon --reason split --slice 7")
+    assert rc == 0
+    events = read_events(7, tmp_path)
+    assert events[0] == {
+        "event_id": "gh-comment-500",
+        "type": "abandoned",
+        "slice_id": 7,
+        "at": "2026-07-20T10:00:00Z",
+        "by": "pm",
+        "reason": "split",
+    }
+
+
+def test_main_abandoned_without_reason_fails_without_recording(tmp_path, monkeypatch):
+    monkeypatch.setattr(hgc, "EVENTS_DIR", tmp_path)
+    rc = run_main("/abandon --slice 7")
+    assert rc == 1
+    assert list(tmp_path.iterdir()) == []
+
+
+def test_main_abandoned_is_idempotent(tmp_path, monkeypatch):
+    monkeypatch.setattr(hgc, "EVENTS_DIR", tmp_path)
+    run_main("/abandon --reason failed --slice 7")
+    rc = run_main("/abandon --reason failed --slice 7")
+    assert rc == 0
+    assert len(read_events(7, tmp_path)) == 1
