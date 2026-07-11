@@ -14,7 +14,7 @@ Harness-Keeper の道具。**読むだけ。** 唯一の書き込みは `/rescue
 | イベントスキーマ | `schemas/slice-event.schema.json` | 1イベント=1行の NDJSON を検証（draft 2020-12） |
 | バリデータ | `scripts/validate_events.py` | スキーマ＋event_id冪等＋append-only（時刻/slice_id整合） |
 | CI（schema） | `../../.github/workflows/validate-events.yml` | PR 時に events を検証（事後検証層） |
-| ゲートログ | `../../docs/metrics/gates.md` | NO-GO種別つき（ADR-0007 改訂の実体・本運用中） |
+| **ゲートログ** | `../../docs/metrics/gates.md` ＋ `scripts/generate_gates_log.py` | `gate`イベントから生成する派生物（手動編集禁止・slice-02で二重管理を廃止） |
 | テストデータ | `testdata/valid`・`testdata/invalid` | 正常=緑・異常=赤の回帰用 |
 | `issued`イベント発火 | `scripts/emit_issued_event.py` ＋ `../../.github/workflows/emit-issued-event.yml` | `docs/slices/slice-NN.md` の merge を検知し起票イベントを記録 |
 | **fold純関数** | `scripts/fold.py` | events → 状態（`SliceStatus`）＋KPI6指標を再構成する純関数（決定性あり） |
@@ -71,8 +71,8 @@ Harness-Keeper の道具。**読むだけ。** 唯一の書き込みは `/rescue
 - `/abandon` の `--reason` は `split`（分解し直し。通常 `/gate NO-GO --kind redecompose` とセット）／
   `descoped`（要らないと判明）／`failed`（緑に至らず断念）の3値のみ許可。省略・不正値は記録せず
   打ち直しを促す。
-- `docs/metrics/gates.md` は人間向けの任意ログとして残るが、**KPI計算が読むのは events。
-  食い違えば events が正**。
+- `docs/metrics/gates.md` は `gate` イベントから**日次cronが自動生成する**（slice-02。手動編集しない）。
+  二重管理・食い違いのリスクは構造的に無い（`docs/metrics/index/slice-map.json` と同じ扱い）。
 - slice_id 解決・応答UXは `/rescue` と同じ（`--slice` 明示 > PRブランチ > issue本文、👀→✅/❌）。
 
 ## `submitted`・`completed` の自動記録
@@ -111,6 +111,7 @@ python tools/slice-aggregator/scripts/fold.py tools/slice-aggregator/testdata/va
 # 三層集約を手動生成（as_ofは任意のISO8601。実行するとdocs/metrics/index・docs/status配下に書き込む）
 python tools/slice-aggregator/scripts/generate_daily_snapshot.py --as-of "$(date -u +%Y-%m-%dT%H:%M:%SZ)"
 python tools/slice-aggregator/scripts/generate_weekly_report.py --as-of "$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+python tools/slice-aggregator/scripts/generate_gates_log.py   # docs/metrics/gates.md を再生成
 
 # 単体テスト
 python -m pytest tools/slice-aggregator/tests/ -v
