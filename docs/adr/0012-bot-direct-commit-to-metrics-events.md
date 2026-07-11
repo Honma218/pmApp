@@ -1,5 +1,5 @@
 ---
-status: proposed（PM承認待ち。GO 後に accepted へ）
+status: accepted（2026-07-11・P0 #7 GO・PM承認）
 関連: ADR-0001（不可逆操作の関所）/ ADR-0004（ブランチ層が書込権を決める）/ ADR-0007（層境ゲート）
 ---
 
