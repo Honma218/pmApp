@@ -118,10 +118,12 @@ jobs:
       - name: 記録できていればコミット・push
         if: steps.authz.outputs.authorized == 'true' && steps.handle.outputs.rc == '0'
         run: |
-          if ! git diff --quiet -- docs/metrics/events/; then
+          # git diff は untracked（新規）ファイルを検知しないため、先に git add してから
+          # 差分の有無を判定する（2026-07-11 発見・修正）。
+          git add docs/metrics/events/
+          if ! git diff --cached --quiet; then
             git config user.name "github-actions[bot]"
             git config user.email "github-actions[bot]@users.noreply.github.com"
-            git add docs/metrics/events/
             git commit -m "chore(events): rescue記録 (comment #${COMMENT_ID})"
             git push origin HEAD:main
           fi
