@@ -1,10 +1,22 @@
 ---
 name: express-review-rules
-description: Audit が差分レビューで参照する Express / TypeScript / Next.js の優先度付きルール集。M-team の受け入れテスト・層境ゲート・Java/Spring 移行方針と整合する観点だけを載せる。背景知識として読み込まれる監査型スキル。
+description: 廃止（旧スコープ専用）。Express/TypeScript/Next.js 向けの優先度付きレビュールール集だった。現行スコープ（スライス進捗集計アプリ）はPython/GitHub Actionsで実装されており対象コードが存在しない。Audit は本スキルを参照しない。
 user-invocable: false
 ---
 
-# Express / TS レビュールール集（監査型）
+# express-review-rules（廃止）
+
+> **【スコープ変更・2026-07-11】廃止。** `backend/`（Express＋TypeScript）は現行スコープに存在しない
+> （ADR-0011 廃止判定・`docs/memory-bank/pending-scope-pivot-claude-md-and-adr.md`）。
+> Audit（`.claude/agents/audit.md`）は本スキルを参照しなくなった。
+
+**現行スコープ向けの監査型ルール集（Python/GitHub Actions 用）はまだ作られていない。**
+Audit は当面、スライス指示書・`CLAUDE.md` の禁止事項・一般的なコード品質判断だけで評価する。
+ルール集が必要になったら新規スキルとして起票する（本ファイルの再利用はしない）。
+
+以下は旧スコープ（Express/TS/Next.js）当時の内容。歴史的記録として残す。
+
+---
 
 > Audit 専用。**Critical → Low の順に見て、Critical と Major だけを報告する。**
 > 「正しさと要件に影響するギャップのみ」。スタイル・好み・将来の拡張性は報告しない。

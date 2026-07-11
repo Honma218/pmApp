@@ -13,8 +13,9 @@ disable-model-invocation: true
 
 ## 禁止事項（全工程を通して有効）
 
-- commit / push / DBマイグレーション禁止（統合役のみ）
-- `acceptance/` 変更禁止（テスト＝仕様＝read-only）
+- main への commit / push / DBマイグレーション禁止（統合役のみ。作業ブランチのcommit/pushは可）
+- `docs/metrics/events/**`・`docs/metrics/index/`・`docs/status/` の手書き禁止（bot / 日次cronのみが書く）
+- `CLAUDE.md`・`docs/adr/**` 変更禁止
 - 範囲外ファイル変更禁止
 - `main` 上で作業しない
 - 緑になったら停止して報告（人の出番へ渡す）
