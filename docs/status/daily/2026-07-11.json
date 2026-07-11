@@ -1,0 +1,38 @@
+{
+  "date": "2026-07-11",
+  "as_of": "2026-07-11T13:16:51Z",
+  "kpis": {
+    "afk_completion_rate": 1.0,
+    "afk_completion_rate_detail": {
+      "numerator": 1,
+      "denominator": 1
+    },
+    "rework_rate": 0.0,
+    "rework_rate_detail": {
+      "numerator": 0,
+      "denominator": 1
+    },
+    "slice_bloat_signal": {
+      "completed_diff_lines": [
+        128
+      ],
+      "abandoned_split_count": 0,
+      "redecompose_event_count": 0,
+      "denominator": 1,
+      "note": "閾値未確定。diff行数・所要日数から「肥大」と判定する基準はPM未承認（生信号のみ）。"
+    },
+    "cost_efficiency_usd_per_task": null,
+    "instruction_progress_rate": 1.0,
+    "instruction_progress_detail": {
+      "numerator": 1,
+      "denominator": 1
+    },
+    "weekly_completed_count_observed": 1
+  },
+  "slice_count": {
+    "total": 1,
+    "completed": 1,
+    "abandoned": 0,
+    "in_progress": 0
+  }
+}
