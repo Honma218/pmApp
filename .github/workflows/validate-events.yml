@@ -1,6 +1,6 @@
 # スライス進捗イベント(NDJSON)のスキーマ検証（三層モデルの「事後検証」層）。
 # 確定ログ §6-1: 欠損を集計時ではなく PR 時に弾く。ADR-0012 の「JSON Schema で全 events 行を CI 検証」の実体。
-# status: proposed（PM承認待ち #6/#7）。GO 後に本運用。
+# status: accepted（P0 #6/#7 GO・2026-07-11 PM承認済み）。本運用中。
 name: validate-events
 
 on:

@@ -1,0 +1,72 @@
+# docs/slices/slice-NN.md の main マージを検知し、issued イベントを bot が直コミットする。
+# 実装ロードマップ P1 §3 項目4／確定ログ #H の実体。ADR-0012（bot 直コミット許可）の適用範囲内
+# （書き込み先は docs/metrics/events/** のみ・append-only・schema検証を経てからコミット）。
+# status: accepted（P0 #7 GO・2026-07-11 PM承認済み）。
+name: emit-issued-event
+
+on:
+  pull_request:
+    types: [closed]
+    branches: [main]
+    paths:
+      - "docs/slices/slice-*.md"
+
+permissions:
+  contents: write
+
+concurrency:
+  group: metrics-write
+  cancel-in-progress: false
+
+jobs:
+  emit:
+    if: github.event.pull_request.merged == true
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: 依存を入れる
+        run: pip install "jsonschema>=4.20" "pyyaml>=6.0"
+
+      - name: マージされた PR の変更ファイルを取得
+        id: changed
+        run: |
+          git fetch origin ${{ github.event.pull_request.base.sha }} ${{ github.event.pull_request.head.sha }} --depth=1 2>/dev/null || true
+          CHANGED="$(git diff --name-only --diff-filter=AM \
+            ${{ github.event.pull_request.base.sha }} ${{ github.event.pull_request.head.sha }} \
+            -- 'docs/slices/slice-*.md' || true)"
+          echo "files<<EOF" >> "$GITHUB_OUTPUT"
+          echo "$CHANGED" >> "$GITHUB_OUTPUT"
+          echo "EOF" >> "$GITHUB_OUTPUT"
+
+      - name: issued イベントを生成（未コミット・作業ツリーへ追記のみ）
+        if: steps.changed.outputs.files != ''
+        run: |
+          python tools/slice-aggregator/scripts/emit_issued_event.py \
+            --pr-number "${{ github.event.pull_request.number }}" \
+            --at "${{ github.event.pull_request.merged_at }}" \
+            ${{ steps.changed.outputs.files }}
+
+      - name: 生成したイベントを検証（PR時と同じスキーマ検証を直コミット前にも通す）
+        if: steps.changed.outputs.files != ''
+        run: python tools/slice-aggregator/scripts/validate_events.py
+
+      - name: 変更があれば append-only でコミット・push
+        if: steps.changed.outputs.files != ''
+        run: |
+          if git diff --quiet -- docs/metrics/events/; then
+            echo "新規イベントなし。スキップ。"
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add docs/metrics/events/
+          git commit -m "chore(events): issued イベントを記録 (PR #${{ github.event.pull_request.number }})"
+          git push origin HEAD:main

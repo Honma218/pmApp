@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://m-team/slice-aggregator/schemas/slice-event.schema.json",
   "title": "Slice progress event (one JSON object per NDJSON line)",
-  "description": "スライス進捗集計アプリの1イベント。docs/metrics/events/slice-NNNN.jsonl の各行を検証する。status=proposed（PM承認待ち #6/#7）。確定ログ §7 準拠。",
+  "description": "スライス進捗集計アプリの1イベント。docs/metrics/events/slice-NNNN.jsonl の各行を検証する。status=accepted（P0 #6/#7 GO・2026-07-11 PM承認済み）。確定ログ §7 準拠。",
   "type": "object",
   "required": ["event_id", "type", "slice_id", "at"],
   "additionalProperties": false,
