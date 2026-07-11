@@ -1,0 +1,75 @@
+# スライスPRに現在地1行を投稿する速報層（実装ロードマップ P5 ①・確定ログ #I）。
+# 自分のPRにのみ投稿する。書き込みは対象PRのコメントのみ（docs/metrics/等には触れない・読むだけ）。
+# status: accepted（P0 GO・2026-07-11 PM承認済み）。
+name: pr-status-comment
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  comment:
+    # feature/slice-<N>-* 以外のPR（docs整備・ハーネス変更等）では何もしない
+    if: startsWith(github.head_ref, 'feature/slice-')
+    runs-on: ubuntu-latest
+    env:
+      GH_TOKEN: ${{ github.token }}
+      REPO: ${{ github.repository }}
+      PR_NUMBER: ${{ github.event.pull_request.number }}
+      HEAD_REF: ${{ github.head_ref }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: slice_id をブランチ名から抽出
+        id: slice
+        run: |
+          SLICE_ID="$(echo "$HEAD_REF" | grep -oE 'feature/slice-0*([0-9]+)' | grep -oE '[0-9]+$')"
+          if [ -z "$SLICE_ID" ]; then
+            echo "slice_id をブランチ名から抽出できない（$HEAD_REF）。スキップ。"
+            echo "resolved=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "resolved=true" >> "$GITHUB_OUTPUT"
+            echo "slice_id=$SLICE_ID" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: 現在地1行を生成
+        if: steps.slice.outputs.resolved == 'true'
+        id: render
+        run: |
+          MSG="$(python3 tools/slice-aggregator/scripts/render_pr_status.py --slice-id "${{ steps.slice.outputs.slice_id }}")"
+          {
+            echo "message<<STATUS_EOF"
+            echo "$MSG"
+            echo "STATUS_EOF"
+          } >> "$GITHUB_OUTPUT"
+
+      - name: 既存の速報コメントを検索
+        if: steps.slice.outputs.resolved == 'true'
+        id: existing
+        run: |
+          MARKER="<!-- slice-aggregator:status:${{ steps.slice.outputs.slice_id }} -->"
+          COMMENT_ID="$(gh api "repos/${REPO}/issues/${PR_NUMBER}/comments" --paginate \
+            --jq "[.[] | select(.body | startswith(\"$MARKER\"))][0].id // empty")"
+          echo "comment_id=$COMMENT_ID" >> "$GITHUB_OUTPUT"
+
+      - name: 速報コメントを投稿 or 更新
+        if: steps.slice.outputs.resolved == 'true'
+        env:
+          BODY: ${{ steps.render.outputs.message }}
+        run: |
+          if [ -n "${{ steps.existing.outputs.comment_id }}" ]; then
+            gh api "repos/${REPO}/issues/comments/${{ steps.existing.outputs.comment_id }}" \
+              -X PATCH -f body="$BODY" --silent
+          else
+            gh api "repos/${REPO}/issues/${PR_NUMBER}/comments" -f body="$BODY" --silent
+          fi

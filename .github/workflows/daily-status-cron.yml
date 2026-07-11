@@ -1,0 +1,57 @@
+# 日次で全 events を再計算し、集約の派生物（slice-map／daily／weekly）を生成する。
+# 実装ロードマップ P5 ②③・確定ログ #J の実体。
+# 大原則：集約を書くのは日次cron 1本だけ（他は集約に触れない＝書き手1つ＝突合ゼロ）。
+# GitHub Pages は作らない（v0はMarkdown/JSON出力のみ。確定ログ #I）。
+# status: accepted（P0 GO・2026-07-11 PM承認済み）。
+name: daily-status-cron
+
+on:
+  schedule:
+    # 21:00 UTC = 06:00 JST（日次1回）
+    - cron: "0 21 * * *"
+  workflow_dispatch: {}
+
+permissions:
+  contents: write
+
+concurrency:
+  group: metrics-write
+  cancel-in-progress: false
+
+jobs:
+  aggregate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: 依存を入れる
+        run: pip install "jsonschema>=4.20"
+
+      - name: 実行時刻を as_of として固定（再現性・P2）
+        id: asof
+        run: echo "value=$(date -u +%Y-%m-%dT%H:%M:%SZ)" >> "$GITHUB_OUTPUT"
+
+      - name: 日次スナップショット生成（slice-map.json・daily/*.json）
+        run: python3 tools/slice-aggregator/scripts/generate_daily_snapshot.py --as-of "${{ steps.asof.outputs.value }}"
+
+      - name: 週次レポート生成（weekly/*.md）
+        run: python3 tools/slice-aggregator/scripts/generate_weekly_report.py --as-of "${{ steps.asof.outputs.value }}"
+
+      - name: 生成した events 由来の派生物に変更があればコミット・push
+        run: |
+          if git diff --quiet -- docs/metrics/index/ docs/status/; then
+            echo "変更なし。スキップ。"
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add docs/metrics/index/ docs/status/
+          git commit -m "chore(status): 日次集約 (${{ steps.asof.outputs.value }})"
+          git push origin HEAD:main
