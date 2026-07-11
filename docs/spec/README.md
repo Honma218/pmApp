@@ -1,11 +1,15 @@
-# docs/spec/ — PM 仕様表の正本
+# docs/spec/ — PM 仕様表の正本（旧スコープ・現行では未使用）
 
-**PM が書く仕様表（Given/When/Then）の置き場**。ここが仕様の正本であり、`acceptance/` のテストコードはこの仕様表からの翻訳（`/spec <slice>` で AIアーキが実行）。spec-kit は丸ごと導入せず、テンプレ3点（constitution 書式・Review & Acceptance Checklist・clarify 質問カタログ）のみ抜粋して使う（計画書 §5）。
+> **【スコープ変更・2026-07-11】** 本ディレクトリは「PM が書く仕様表 → `acceptance/` への翻訳
+> （`/spec <slice>`）」という旧スコープ（業務アプリ再実装）の仕組み前提。現行スコープ
+> （スライス進捗集計アプリのみ）では `acceptance/` 自体が存在しないため未使用。
+> 対応するADR（0001・0004・0005・0008・0009・0010）は廃止判定
+> （`docs/memory-bank/pending-scope-pivot-claude-md-and-adr.md` 参照）。
+> スライス進捗集計アプリの成果物・完了基準は
+> `2026-07-11_slice-progress-aggregator_実装ロードマップ.md`（P0〜P6）が正本。
 
-## ルール
+## 旧ルール（参考・現行では適用しない）
 
-- 書込は **`spec/*` ブランチのみ**（ADR-0004。`acceptance/` と同じ判定）。
-- 1スライス＝1仕様表を基本とし、受入基準は **≤3〜5** に収める（超えたら分解のバグ）。
+- 書込は `spec/*` ブランチのみ（ADR-0004。`acceptance/` と同じ判定）。
+- 1スライス＝1仕様表を基本とし、受入基準は ≤3〜5 に収める。
 - ファイル名は対応するスライスに揃える: `slice-NN-<slug>.md`。
-- セルフレビューには spec-kit 抜粋の「Review & Acceptance Checklist」を使う。
-- 合成フィクスチャ（テストデータ）も PM 所有。フィールドのデータ階層（L0/L1/L2）は仕様表作成時に確定する（計画書 §6）。
