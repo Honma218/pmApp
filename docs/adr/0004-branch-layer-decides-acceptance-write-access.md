@@ -1,3 +1,11 @@
+---
+status: superseded（スコープ変更・2026-07-11）
+---
+
+> **2026-07-11 追記：本 ADR はスコープ変更（業務アプリ再実装 → スライス進捗集計アプリのみの開発）
+> により対象が消滅した。** `acceptance/` 自体が現行スコープに存在しない。詳細・改訂判断は
+> `docs/memory-bank/pending-scope-pivot-claude-md-and-adr.md` を参照。以下は当時の記録。
+
 # `acceptance/` の書込権は「人の役職」ではなく「ブランチ名」で決める
 
 ADR-0001 は「受け入れテスト＝仕様＝読み取り専用」を定めたが、これを hook・permissions・CI の三層すべてで無条件にブロックした結果、**正当な書き手（仕様表を翻訳する上流）まで締め出され、`acceptance/` を repo に入れる経路が消滅した**。解決として、書込権をブランチ名で判定する二層に分ける：`spec/slice-NN` は `acceptance/` と `docs/spec/` を書けるが実装は書けない、`feature/slice-NN` は実装を書けるが `acceptance/` は read-only。
