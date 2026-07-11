@@ -1,0 +1,74 @@
+# feature/slice-<N>-* PR の open（submitted）／merge（completed）を検知しイベントを記録する。
+# P6準備。emit-issued-event.yml・rescue.yml と同じ automation パターン（ADR-0012の適用範囲内）。
+# rejected・gate（人の判断そのもの）は対象外。/reject・/gate コメントコマンドで別途扱う（gate.yml）。
+# status: accepted（P0 GO・2026-07-11 PM承認済み）。
+name: emit-slice-pr-events
+
+on:
+  pull_request:
+    types: [opened, reopened, closed]
+    branches: [main]
+
+permissions:
+  contents: write
+
+concurrency:
+  group: metrics-write
+  cancel-in-progress: false
+
+jobs:
+  emit:
+    if: startsWith(github.head_ref, 'feature/slice-')
+    runs-on: ubuntu-latest
+    env:
+      HEAD_REF: ${{ github.head_ref }}
+      PR_NUMBER: ${{ github.event.pull_request.number }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: 依存を入れる
+        run: pip install "jsonschema>=4.20"
+
+      - name: submitted イベントを記録（open/reopen 時）
+        if: github.event.action == 'opened' || github.event.action == 'reopened'
+        run: |
+          python3 tools/slice-aggregator/scripts/emit_slice_pr_event.py \
+            --type submitted \
+            --pr-number "$PR_NUMBER" \
+            --head-ref "$HEAD_REF" \
+            --at "${{ github.event.pull_request.created_at }}" \
+            --diff-add "${{ github.event.pull_request.additions }}" \
+            --diff-del "${{ github.event.pull_request.deletions }}"
+
+      - name: completed イベントを記録（merge 時のみ。閉じただけなら何もしない）
+        if: github.event.action == 'closed' && github.event.pull_request.merged == true
+        run: |
+          python3 tools/slice-aggregator/scripts/emit_slice_pr_event.py \
+            --type completed \
+            --pr-number "$PR_NUMBER" \
+            --head-ref "$HEAD_REF" \
+            --at "${{ github.event.pull_request.merged_at }}"
+
+      - name: 生成したイベントを検証（直コミット前の事後検証層）
+        if: github.event.action == 'opened' || github.event.action == 'reopened' || (github.event.action == 'closed' && github.event.pull_request.merged == true)
+        run: python3 tools/slice-aggregator/scripts/validate_events.py
+
+      - name: 変更があれば append-only でコミット・push
+        if: github.event.action == 'opened' || github.event.action == 'reopened' || (github.event.action == 'closed' && github.event.pull_request.merged == true)
+        run: |
+          if git diff --quiet -- docs/metrics/events/; then
+            echo "新規イベントなし。スキップ。"
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add docs/metrics/events/
+          git commit -m "chore(events): PRライフサイクルイベントを記録 (PR #${PR_NUMBER})"
+          git push origin HEAD:main

@@ -26,6 +26,9 @@ Harness-Keeper の道具。**読むだけ。** 唯一の書き込みは `/rescue
 | **② 日次集約** | `scripts/generate_daily_snapshot.py` ＋ `../../.github/workflows/daily-status-cron.yml` | `docs/metrics/index/slice-map.json`・`docs/status/daily/*.json` を生成（書き手はこの1本だけ・確定ログ #J） |
 | **③ 週次レポート** | `scripts/generate_weekly_report.py`（同上 workflow） | `docs/status/weekly/YYYY-Www.md`。直近5スライス移動平均・Flywheel観察項目 |
 
+| **`submitted`・`completed` 自動記録** | `scripts/emit_slice_pr_event.py` ＋ `../../.github/workflows/emit-slice-pr-events.yml` | `feature/slice-<N>-*` PRのopen/mergeから機械的に記録（P6準備） |
+| **`/gate`・`/reject`** | `scripts/handle_gate_comment.py` ＋ `../../.github/workflows/gate.yml` | PM限定のコメントコマンド。層境ゲート判定・統合役NGを記録（P6準備） |
+
 未実装（次フェーズ）：**P6 slice-01 ドッグフーディングのみ**。
 日次での過去7日再計算による非決定性検出（P2の運用面）は、実データが増えてから
 `daily-status-cron.yml` に追加する予定（現状は日次1回の単純再計算のみ）。
@@ -46,6 +49,29 @@ Harness-Keeper の道具。**読むだけ。** 唯一の書き込みは `/rescue
   **未設定時は現運用者 `Honma218` にフォールバック**する。チーム拡張時は
   `gh variable set UPSTREAM_MEMBERS --body "user1,user2,user3"` で上書きする。
 - 応答は 👀（受理リアクション）→ コメント返信で ✅（記録）／❌（失敗理由）。
+
+## `/gate`・`/reject`（層境ゲート・統合役NGの記録。PM限定）
+
+```
+/gate GO --slice 7
+/gate NO-GO --kind rework --slice 7
+/gate NO-GO --kind redecompose --slice 7
+/reject --slice 7 範囲外のファイルが含まれている
+```
+
+- 実行できるのは `GATE_KEEPERS`（リポジトリ変数。カンマ区切り。`/rescue` の `UPSTREAM_MEMBERS` とは別）
+  に登録されたユーザーのみ。**未設定時は現運用者 `Honma218` にフォールバック**する
+  （CLAUDE.md §7「判定者はPM」を allowlist で強制。`/rescue` はリーダーも実行できるが `/gate`・`/reject` はPM限定）。
+- `NO-GO` は `--kind rework`（同一 slice_id 継続）か `--kind redecompose`（分解し直し）を**必須**で
+  指定する。省略すると記録せず打ち直しを促す。
+- `docs/metrics/gates.md` は人間向けの任意ログとして残るが、**KPI計算が読むのは events。
+  食い違えば events が正**。
+- slice_id 解決・応答UXは `/rescue` と同じ（`--slice` 明示 > PRブランチ > issue本文、👀→✅/❌）。
+
+## `submitted`・`completed` の自動記録
+
+`feature/slice-<N>-*` ブランチのPRが **open された時点**で `submitted`（diff行数込み）、
+**main へ merge された時点**で `completed` を bot が自動記録する。人の操作は不要。
 
 ## 三層集約（P5）の出力
 
