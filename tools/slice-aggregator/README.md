@@ -18,11 +18,29 @@ Harness-Keeper の道具。**読むだけ。** 唯一の書き込みは `/rescue
 | テストデータ | `testdata/valid`・`testdata/invalid` | 正常=緑・異常=赤の回帰用 |
 | `issued`イベント発火 | `scripts/emit_issued_event.py` ＋ `../../.github/workflows/emit-issued-event.yml` | `docs/slices/slice-NN.md` の merge を検知し起票イベントを記録 |
 | **fold純関数** | `scripts/fold.py` | events → 状態（`SliceStatus`）＋KPI6指標を再構成する純関数（決定性あり） |
-| **単体テスト** | `tests/test_fold.py` | 状態機械の全遷移・決定性・KPI算出を網羅（P2完了基準） |
+| **単体テスト** | `tests/test_fold.py`・`tests/test_handle_rescue_comment.py` | 状態機械・決定性・KPI算出・`/rescue`解決ロジックを網羅 |
 | CI（test） | `../../.github/workflows/test-slice-aggregator.yml` | PR 時に pytest を実行 |
+| **`/rescue`・`/unrescue`** | `scripts/handle_rescue_comment.py` ＋ `../../.github/workflows/rescue.yml` | 唯一の人手イベント。issue/PRコメントから救援を記録（確定ログ #B・P3） |
 
-未実装（次フェーズ）：P3 `/rescue` Actions／P4 `/pickup` 重複警告／P5 三層集約
+未実装（次フェーズ）：P4 `/pickup` 重複警告／P5 三層集約
 （速報・日次cron・週次mdと、日次での過去7日再計算による非決定性検出 cron は P5 が所有）。
+
+## `/rescue`（救援の記録）の使い方
+
+リーダーが issue または PR のコメントに次のように書く（**人が書くのは日本語1文だけ**）。
+
+```
+/rescue --slice 7 環境変数の置き場所が分からず
+```
+
+- `--slice <N>` は省略可。省略時は PR のヘッドブランチ名（`feature/slice-<N>-*`）か、
+  issue 本文中の `docs/slices/slice-<N>` 参照から自動解決する。**解決できない場合は記録せず、
+  `--slice` を付けて打ち直すよう返信する**（誤記録より記録漏れを許容・確定ログ #B）。
+- 打ち消しは `/unrescue --slice <N> <理由>`（`rescue_revoked` を追記。行は消さない）。
+- 実行できるのは `UPSTREAM_MEMBERS`（リポジトリ変数。カンマ区切り）に登録されたユーザーのみ。
+  **未設定時は現運用者 `Honma218` にフォールバック**する。チーム拡張時は
+  `gh variable set UPSTREAM_MEMBERS --body "user1,user2,user3"` で上書きする。
+- 応答は 👀（受理リアクション）→ コメント返信で ✅（記録）／❌（失敗理由）。
 
 **「スライス肥大率」の閾値は未確定。** `compute_kpis()` は diff行数・所要日数・split/redecompose件数の
 生信号のみ返す。「何行・何日から肥大か」は新たな KPI 定義の決定であり PM 承認が要る
