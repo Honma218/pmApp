@@ -1,3 +1,12 @@
+---
+status: superseded（スコープ変更・2026-07-11）
+---
+
+> **2026-07-11 追記：本 ADR はスコープ変更（業務アプリ再実装 → スライス進捗集計アプリのみの開発）
+> により対象が消滅した。** vendor 済みだった `reference-mock/` は2026-07-11に完全削除済み
+> （誤って `feature/slice-00-skeleton` にマージされた分も含む）。詳細・改訂判断は
+> `docs/memory-bank/pending-scope-pivot-claude-md-and-adr.md` を参照。以下は当時の記録。
+
 # 参照モックを `reference-mock/` として vendor し、`acceptance/` は `BASE_URL` で対象を切り替える
 
 ADR-0001 は「参照モック（answer key）に先にスイートを流してテスト自体を検証する」ことを前提にしているが、参照モックは別リポにあり、runner は `app_dir` を repo root の内側に閉じ込める（外は refuse）ため、この工程は物理的に実行不能だった。解決として、参照モックを git subtree で `reference-mock/` に vendor し（`acceptance/` と同様 read-only）、`acceptance/` のテストは接続先を `ACCEPTANCE_BASE_URL` から受け取る。

@@ -1,6 +1,12 @@
 ---
-status: accepted（ADR-0002 を supersede する）
+status: superseded（スコープ変更・2026-07-11。ADR-0002 を supersede していた経緯は保持）
 ---
+
+> **2026-07-11 追記：本 ADR はスコープ変更（業務アプリ再実装 → スライス進捗集計アプリのみの開発）
+> により対象が消滅した。** `backend/`（Express実装）は現行スコープに存在しない。v0（スライス
+> 進捗集計アプリ）はサーバー/DBを持たない GitHub Actions 投影型（実装ロードマップ§0）。
+> 詳細・改訂判断は `docs/memory-bank/pending-scope-pivot-claude-md-and-adr.md` を参照。
+> 以下は当時の記録。
 
 # TS バックエンドは Express ＋ 構造規約を採用する（NestJS から変更）
 
