@@ -1,3 +1,10 @@
+> **M-team 注記**：このディレクトリは `staff-report-system` を `git subtree`（squash）で vendor した参照モック（answer key）です。
+> **全ブランチで read-only**（ADR-0005・CLAUDE.md §1-3）。書き換えて緑にする経路は `protect-paths.sh` でブロックされています。
+> vendor 更新（再取り込み）は統合役が手動で行います。起動設定は `backend/test-harness.runtime.json`。
+> シード棚卸し済み：フィクスチャは合成データのみ（`backend/tests/conftest.py` 参照）。実データ・シークレットの混入なし（確認: 2026-07-11）。
+
+---
+
 # 業務報告・スキルシート生成システム
 
 客先常駐スタッフの業務報告を蓄積し、AIで要約・職務経歴書（スキルシート）を自動生成する Web システム。
