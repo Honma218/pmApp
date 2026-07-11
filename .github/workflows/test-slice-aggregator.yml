@@ -1,0 +1,28 @@
+# tools/slice-aggregator/ の単体テスト（fold の決定性・状態機械網羅・KPI算出）。
+# 実装ロードマップ P2 の完了基準（決定性テスト緑）を PR 時に機械保証する。
+name: test-slice-aggregator
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - "tools/slice-aggregator/**"
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: 依存を入れる
+        run: pip install pytest "jsonschema>=4.20" "pyyaml>=6.0"
+
+      - name: pytest（fold の決定性・状態機械・KPI）
+        run: python -m pytest tools/slice-aggregator/tests/ -v

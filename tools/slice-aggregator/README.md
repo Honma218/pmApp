@@ -7,30 +7,43 @@ Harness-Keeper の道具。**読むだけ。** 唯一の書き込みは `/rescue
 - 着手計画：`../../2026-07-11_slice-progress-aggregator_実装ロードマップ.md`
 - 承認ゲート：`../../2026-07-11_P0-承認パッケージ.md`（**P0 は8件すべてGO・2026-07-11 PM承認済み**）
 
-## 現在の実装状況（P1：基盤スキーマ）
+## 現在の実装状況（P1：基盤スキーマ ／ P2：fold）
 
 | 成果物 | 場所 | 役割 |
 |---|---|---|
 | イベントスキーマ | `schemas/slice-event.schema.json` | 1イベント=1行の NDJSON を検証（draft 2020-12） |
 | バリデータ | `scripts/validate_events.py` | スキーマ＋event_id冪等＋append-only（時刻/slice_id整合） |
-| CI | `../../.github/workflows/validate-events.yml` | PR 時に events を検証（事後検証層） |
+| CI（schema） | `../../.github/workflows/validate-events.yml` | PR 時に events を検証（事後検証層） |
 | ゲートログ | `../../docs/metrics/gates.md` | NO-GO種別つき（ADR-0007 改訂の実体・本運用中） |
 | テストデータ | `testdata/valid`・`testdata/invalid` | 正常=緑・異常=赤の回帰用 |
 | `issued`イベント発火 | `scripts/emit_issued_event.py` ＋ `../../.github/workflows/emit-issued-event.yml` | `docs/slices/slice-NN.md` の merge を検知し起票イベントを記録 |
+| **fold純関数** | `scripts/fold.py` | events → 状態（`SliceStatus`）＋KPI6指標を再構成する純関数（決定性あり） |
+| **単体テスト** | `tests/test_fold.py` | 状態機械の全遷移・決定性・KPI算出を網羅（P2完了基準） |
+| CI（test） | `../../.github/workflows/test-slice-aggregator.yml` | PR 時に pytest を実行 |
 
-未実装（次フェーズ）：P2 `fold` 純関数＋再現テスト／P3 `/rescue` Actions／P4 `/pickup` 重複警告／P5 三層集約。
+未実装（次フェーズ）：P3 `/rescue` Actions／P4 `/pickup` 重複警告／P5 三層集約
+（速報・日次cron・週次mdと、日次での過去7日再計算による非決定性検出 cron は P5 が所有）。
+
+**「スライス肥大率」の閾値は未確定。** `compute_kpis()` は diff行数・所要日数・split/redecompose件数の
+生信号のみ返す。「何行・何日から肥大か」は新たな KPI 定義の決定であり PM 承認が要る
+（旧 ADR-0008 golden 閾値と同じ「最初ゆるく→実データで較正」方針。P6 ドッグフーディングで数値が集まってから判断）。
 
 ## ローカル実行
 
 ```bash
-pip install "jsonschema>=4.20"
-# 既定 glob（docs/metrics/events/**/*.jsonl）を検証
+pip install "jsonschema>=4.20" "pyyaml>=6.0" pytest
+
+# events の検証（既定 glob: docs/metrics/events/**/*.jsonl）
 python tools/slice-aggregator/scripts/validate_events.py
-# 個別ファイル
-python tools/slice-aggregator/scripts/validate_events.py tools/slice-aggregator/testdata/valid/slice-0007.jsonl
+
+# 状態とKPIを見る
+python tools/slice-aggregator/scripts/fold.py tools/slice-aggregator/testdata/valid/slice-0007.jsonl
+
+# 単体テスト
+python -m pytest tools/slice-aggregator/tests/ -v
 ```
 
-終了コード：0=全緑 / 1=検証失敗 / 2=前提エラー（依存欠落・スキーマ不在）。
+`validate_events.py` の終了コード：0=全緑 / 1=検証失敗 / 2=前提エラー（依存欠落・スキーマ不在）。
 
 ## イベント型（確定ログ §7）
 
