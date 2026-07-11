@@ -44,11 +44,14 @@ jobs:
       - name: 週次レポート生成（weekly/*.md）
         run: python3 tools/slice-aggregator/scripts/generate_weekly_report.py --as-of "${{ steps.asof.outputs.value }}"
 
+      - name: 層境ゲート判定ログ生成（gates.md。slice-02・手動編集の二重管理を廃止）
+        run: python3 tools/slice-aggregator/scripts/generate_gates_log.py
+
       - name: 生成した events 由来の派生物に変更があればコミット・push
         run: |
           # git diff は untracked（新規）ファイルを検知しないため、先に git add してから
           # 差分の有無を判定する（2026-07-11 発見・修正）。
-          git add docs/metrics/index/ docs/status/
+          git add docs/metrics/index/ docs/status/ docs/metrics/gates.md
           if git diff --cached --quiet; then
             echo "変更なし。スキップ。"
             exit 0

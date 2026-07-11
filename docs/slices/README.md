@@ -32,6 +32,6 @@
 | ID | ゴール（1行） | 依存 | issue | 状態 |
 |---|---|---|---|---|
 | 1 | `abandoned` イベントの自動記録（`/abandon` コメントコマンド） | P1〜P6準備完了 | [#18](https://github.com/Honma218/pmApp/issues/18) | 完了（PR #19） |
-| 2 | `gates.md` を events 由来の生成物に変える（手動編集の二重管理を廃止） | slice-1完了 | （main マージ後に起票） | 指示書作成済み |
+| 2 | `gates.md` を events 由来の生成物に変える（手動編集の二重管理を廃止） | slice-1完了 | [#23](https://github.com/Honma218/pmApp/issues/23) | 実装中（`/pickup 2`） |
 
 > この一覧は issue 分解の成果物。フェーズ全体の依存順は `2026-07-11_slice-progress-aggregator_実装ロードマップ.md`（P0〜P6）を参照。
