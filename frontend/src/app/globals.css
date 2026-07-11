@@ -1,0 +1,318 @@
+/* モバイルファースト。基本はスマートフォン幅、min-width で拡張する。 */
+:root {
+  --maxw: 640px;
+  --pad: 16px;
+  --fg: #1a1a1a;
+  --muted: #666;
+  --accent: #1a73e8;
+  --border: #e0e0e0;
+  --bg: #fafafa;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: system-ui, -apple-system, "Hiragino Sans", "Noto Sans JP",
+    sans-serif;
+  color: var(--fg);
+  background: var(--bg);
+  line-height: 1.6;
+}
+
+.app-bar {
+  display: flex;
+  align-items: center;
+  height: 52px;
+  padding: 0 var(--pad);
+  background: #fff;
+  border-bottom: 1px solid var(--border);
+  position: sticky;
+  top: 0;
+  z-index: 10;
+}
+
+.app-title {
+  font-weight: 600;
+  font-size: 16px;
+}
+
+.container {
+  max-width: var(--maxw);
+  margin: 0 auto;
+  padding: var(--pad);
+}
+
+.center {
+  text-align: center;
+}
+
+.user-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  max-width: var(--maxw);
+  margin: 0 auto;
+  padding: 8px var(--pad);
+  color: var(--muted);
+  font-size: 14px;
+  border-bottom: 1px solid var(--border);
+}
+
+.button {
+  display: inline-block;
+  background: var(--accent);
+  color: #fff;
+  padding: 12px 20px;
+  border: none;
+  border-radius: 8px;
+  font-weight: 600;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.button:active {
+  opacity: 0.85;
+}
+
+.link-button {
+  background: none;
+  border: none;
+  color: var(--accent);
+  font-size: 14px;
+  cursor: pointer;
+  padding: 0;
+}
+
+h1 {
+  font-size: 20px;
+}
+
+.muted {
+  color: var(--muted);
+}
+
+/* 報告入力（ステップ5） */
+.report-editor {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.report-meta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  font-size: 13px;
+}
+
+.report-textarea {
+  width: 100%;
+  box-sizing: border-box;
+  min-height: 240px;
+  padding: 12px;
+  font: inherit;
+  line-height: 1.6;
+  color: var(--fg);
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  resize: vertical;
+}
+
+.report-textarea:disabled {
+  background: #f5f5f5;
+  color: var(--muted);
+}
+
+.save-indicator {
+  font-size: 13px;
+  white-space: nowrap;
+}
+
+.save-ok {
+  color: var(--muted);
+}
+
+.save-error {
+  color: #c5221f;
+}
+
+.save-confirmed {
+  color: var(--muted);
+}
+
+.previous-ref {
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 12px;
+}
+
+.previous-ref > summary {
+  cursor: pointer;
+  font-weight: 600;
+}
+
+.previous-text {
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.previous-ref h3 {
+  font-size: 15px;
+  margin: 12px 0 6px;
+}
+
+.previous-ref h4 {
+  font-size: 13px;
+  margin: 8px 0 4px;
+  color: var(--muted);
+}
+
+.summary-group ul {
+  margin: 0;
+  padding-left: 18px;
+}
+
+/* 要約の確認・編集（ステップ7） */
+.action-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.summary-section {
+  border-top: 1px solid var(--border);
+  padding-top: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.summary-section h2 {
+  font-size: 17px;
+  margin: 0;
+}
+
+.summary-editor {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.summary-category {
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 12px;
+  margin: 0;
+}
+
+.summary-category legend {
+  font-weight: 600;
+  font-size: 14px;
+  padding: 0 4px;
+}
+
+.review-badge {
+  margin-left: 8px;
+  font-weight: 400;
+  font-size: 12px;
+  color: #b06000;
+  background: #fff4e5;
+  border: 1px solid #f0c990;
+  border-radius: 999px;
+  padding: 1px 8px;
+}
+
+.summary-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 6px;
+}
+
+.summary-item input {
+  flex: 1;
+  box-sizing: border-box;
+  padding: 8px;
+  font: inherit;
+  color: var(--fg);
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+}
+
+.summary-item input:disabled {
+  background: #f5f5f5;
+  color: var(--muted);
+}
+
+/* 報告閲覧（ステップ8） */
+.nav-links {
+  display: flex;
+  gap: 16px;
+  margin-right: auto;
+}
+
+.nav-links a {
+  color: var(--accent);
+  text-decoration: none;
+}
+
+.report-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.report-list-item a {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  text-decoration: none;
+  color: var(--fg);
+}
+
+.report-list-date {
+  font-weight: 600;
+}
+
+.report-list-status {
+  font-size: 12px;
+  color: var(--muted);
+}
+
+.detail-section {
+  margin-top: 16px;
+}
+
+.detail-section h2 {
+  font-size: 16px;
+  margin-bottom: 8px;
+}
+
+@media (min-width: 768px) {
+  .app-title {
+    font-size: 18px;
+  }
+  h1 {
+    font-size: 24px;
+  }
+}
