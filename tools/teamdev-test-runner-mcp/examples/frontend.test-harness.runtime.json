@@ -1,0 +1,11 @@
+{
+  "$schema": "../tools/teamdev-test-runner-mcp/schema/runtime.schema.json",
+  "bootCommand": "npm run dev",
+  "cwd": ".",
+  "env": { "NEXT_PUBLIC_API_BASE": "http://localhost:3000" },
+  "entryUrl": "http://localhost:3001",
+  "port": 3001,
+  "bootTimeoutMs": 90000,
+  "readyCheck": { "type": "http_200", "path": "/" },
+  "shutdownGracefulMs": 5000
+}

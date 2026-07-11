@@ -1,0 +1,7 @@
+{"event_id":"gh-comment-2847100","type":"issued","slice_id":7,"at":"2026-07-18T09:00:00Z","actor":"pm","spec_pr":141,"issue":42}
+{"event_id":"submit-7-152","type":"submitted","slice_id":7,"at":"2026-07-19T12:30:00Z","pr":152,"diff_add":120,"diff_del":8,"usage_usd":null}
+{"event_id":"gh-comment-2847193","type":"rescued","slice_id":7,"at":"2026-07-19T13:10:00Z","actor":"leader-taro","note":"環境変数の置き場所が分からず","source":"https://github.com/m-team/pmapp/pull/152#issuecomment-2847193"}
+{"event_id":"rej-7-152","type":"rejected","slice_id":7,"at":"2026-07-19T15:00:00Z","by":"integrator","reason":"範囲外ファイル"}
+{"event_id":"gate-7-1","type":"gate","slice_id":7,"at":"2026-07-20T10:00:00Z","verdict":"NO-GO","kind":"rework","by":"pm"}
+{"event_id":"gate-7-2","type":"gate","slice_id":7,"at":"2026-07-21T10:00:00Z","verdict":"GO","by":"pm"}
+{"event_id":"done-7-152","type":"completed","slice_id":7,"at":"2026-07-21T11:00:00Z","pr":152}

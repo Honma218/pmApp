@@ -1,0 +1,25 @@
+{
+  "mcpServers": {
+    "teamdev-test-runner": {
+      "type": "stdio",
+      "command": "uv",
+      "args": [
+        "run",
+        "--project",
+        "tools/teamdev-test-runner-mcp",
+        "teamdev-test-runner"
+      ]
+    },
+    "context7": {
+      "type": "http",
+      "url": "https://mcp.context7.com/mcp"
+    },
+    "github": {
+      "type": "http",
+      "url": "https://api.githubcopilot.com/mcp/",
+      "headers": {
+        "X-MCP-Toolsets": "issues,pull_requests"
+      }
+    }
+  }
+}
