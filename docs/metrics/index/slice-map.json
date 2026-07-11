@@ -1,6 +1,6 @@
 {
-  "generated_at": "2026-07-11T13:16:51Z",
-  "as_of": "2026-07-11T13:16:51Z",
+  "generated_at": "2026-07-11T21:40:39Z",
+  "as_of": "2026-07-11T21:40:39Z",
   "slices": {
     "1": {
       "phase": "completed",
@@ -10,6 +10,15 @@
       "settled_at": "2026-07-11T13:13:53Z",
       "rescued": false,
       "completed_pr": 19
+    },
+    "2": {
+      "phase": "completed",
+      "abandoned_reason": null,
+      "issue": null,
+      "issued_at": "2026-07-11T13:38:49Z",
+      "settled_at": "2026-07-11T14:15:02Z",
+      "rescued": false,
+      "completed_pr": 24
     }
   }
 }
