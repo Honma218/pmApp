@@ -1,1 +1,2 @@
 {"event_id": "pr-16-slice-1", "type": "issued", "slice_id": 1, "at": "2026-07-11T12:57:59Z", "actor": "pm", "spec_pr": 16}
+{"event_id": "pr-19", "type": "submitted", "slice_id": 1, "at": "2026-07-11T13:11:14Z", "pr": 19, "diff_add": 105, "diff_del": 23}
